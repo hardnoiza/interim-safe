@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>INTERIM SAFE – Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f2f4f3;--sf:#fff;--ink:#12212b;--mut:#5b6b73;--ln:#d5dcda;--ac:#0f5c66;--ac2:#e3f0f0;
+--v:#1b7f4b;--vb:#dff3e8;--o:#a85d00;--ob:#fdebd0;--r:#b3261e;--rb:#fbe0dd;--m:#4b5563;--mb:#e5e7eb;--p:#1d4ed8;--pb:#dbe7fd}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a20;--sf:#172730;--ink:#e6eeee;--mut:#9db0b6;--ln:#2b3f49;--ac:#5cc1cc;--ac2:#1c3a42;
+--v:#6fdc9f;--vb:#15382a;--o:#f5b45c;--ob:#3d2c12;--r:#ff8a80;--rb:#40201d;--m:#c1c8d0;--mb:#2a323a;--p:#8fb1ff;--pb:#1b2a4d}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Public Sans",system-ui,sans-serif}
+header{background:var(--ac);color:#fff;padding:12px 16px}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) header{background:#0b2a31}}
+h1{margin:0;font-size:20px;font-weight:800;letter-spacing:.2px}
+header small{opacity:.85;display:block}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+select,button,input{font:inherit}
+select,input{padding:7px 9px;border:1px solid var(--ln);border-radius:6px;background:var(--sf);color:var(--ink)}
+.roles{display:flex;overflow-x:auto;gap:4px;padding:8px 12px 0;border-bottom:1px solid var(--ln);background:var(--sf)}
+.roles button,.tabs button{border:0;background:none;padding:9px 12px;color:var(--mut);font-weight:600;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent}
+.roles button[aria-pressed=true],.tabs button[aria-pressed=true]{color:var(--ac);border-color:var(--ac)}
+.tabs{display:flex;overflow-x:auto;padding:0 12px;background:var(--bg)}
+main{padding:14px;max-width:980px;margin:0 auto}
+.note{background:var(--ac2);border-left:4px solid var(--ac);padding:8px 12px;border-radius:4px;margin-bottom:14px;font-size:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.k{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:10px 12px}
+.k b{font-size:26px;display:block;line-height:1.1}.k span{color:var(--mut);font-size:13px}
+.k.bad b{color:var(--r)}.k.ok b{color:var(--v)}
+h2{font-size:16px;margin:18px 0 8px}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:8px;padding:12px;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.tag{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12.5px;font-weight:600;margin:2px 4px 2px 0}
+.v{background:var(--vb);color:var(--v)}.o{background:var(--ob);color:var(--o)}.r{background:var(--rb);color:var(--r)}
+.m{background:var(--mb);color:var(--m)}.p{background:var(--pb);color:var(--p)}
+.bar2{height:10px;border-radius:5px;overflow:hidden;display:flex;background:var(--mb);margin-top:6px}
+.bar2 i{display:block}
+.btn{background:var(--ac);color:#fff;border:0;border-radius:6px;padding:8px 12px;font-weight:600;cursor:pointer}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#06181c}}
+.btn.alt{background:none;color:var(--ac);border:1px solid var(--ac)}
+.mut{color:var(--mut);font-size:13.5px}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--ln)}
+.sc{overflow-x:auto}
+.big{font-size:17px}
+.al{border-left:5px solid;padding:8px 10px;margin-bottom:6px;background:var(--sf);border-radius:4px}
+.al.r{border-color:var(--r)}.al.o{border-color:var(--o)}.al.y{border-color:#c9a400}.al.g{border-color:var(--v)}
+.al{color:var(--ink)}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+</style>
+</head>
+<body>
+<header>
+<h1>INTERIM SAFE</h1>
+<small>PROTOTYPE DE DÉMONSTRATION · DONNÉES FICTIVES · ENVIRONNEMENT DE TEST<br>Date de référence : 30/09/2026</small>
+<div class="bar"><label class="mut" style="color:#fff">Compte de démonstration : <select id="who" aria-label="Choisir le compte"></select></label></div>
+</header>
+<nav class="roles" id="roles" aria-label="Espaces"></nav>
+<nav class="tabs" id="tabs" aria-label="Sections"></nav>
+<main id="main"></main>
+
+<script>
+const H=864e5,T=new Date('2026-09-30');
+const fmt=o=>new Date(T.getTime()+o*H).toLocaleDateString('fr-FR');
+const AG=['Nord Intérim','Flandres Emploi','Hainaut Missions'];
+const EN=['Logistica Valenciennes','Métalux','AgriPack','BâtiNord','Cristal Froid'];
+const NM=['Camille Martin','Yanis Benali','Sophie Leroy','Lucas Dubois','Inès Moreau','Karim Haddad','Emma Petit','Thomas Roussel','Léa Fontaine','Nassim Cherif','Julie Marchand','Antoine Girard','Manon Lefèvre','Hugo Bertrand','Chloé Vasseur','Mehdi Amrani','Clara Dupuis','Paul Delattre','Sarah Mercier','Maxime Carpentier'];
+const vis=[200,25,-10,120,300,12,80,-40,150,60,220,5,180,90,-3,260,40,110,330,70];
+const per=[400,-20,300,18,null,500,90,250,-100,45,600,200,10,330,150,null,80,220,400,28];
+const hab=[100,60,-5,null,'p',200,14,300,40,-60,90,180,20,'p',70,130,260,8,350,55];
+const pre=[300,-15,200,null,25,90,'p',150,400,-2,60,240,35,120,-30,180,9,270,330,45];
+const PN=['Permis B','Permis C','Permis CE','CACES R489','Permis B'];
+const HN=['Habilitation électrique','Travail en hauteur','SST','Conduite d’engins','Incendie'];
+const VS=['À PROGRAMMER','DEMANDE CRÉÉE','CRÉNEAU PROPOSÉ','CONFIRMÉ'];
+const S={soon:30};
+const P=NM.map((n,i)=>({i,n,ag:i%3,en:i<10?i%5:null,mis:i<10?i:null,sl:'',h:[],
+ it:{'Visite médicale':vis[i],[PN[i%5]]:per[i],[HN[i%5]]:hab[i],'Prévention sécurité':pre[i],'Pièce d’identité':i%7==3?null:700},
+ vs:vis[i]<=30?(i==11?'À PROGRAMMER':VS[i%4]):'À JOUR'}));
+P.forEach(p=>{if(['CRÉNEAU PROPOSÉ','CONFIRMÉ'].includes(p.vs))p.sl=fmt(6)+' à 10h00';if(!['À JOUR','À PROGRAMMER'].includes(p.vs))p.h.push(fmt(-3)+' · Demande de visite créée')});
+const st=v=>v===null?'m':v==='p'?'p':v<0?'r':v<=S.soon?'o':'v';
+const LB={v:'Valide',o:'Expire bientôt',r:'Expiré',m:'Manquant',p:'En attente de validation'};
+const IC={v:'🟢',o:'🟠',r:'🔴',m:'⚫',p:'🔵'};
+const tag=s=>`<span class="tag ${s}">${IC[s]} ${LB[s]}</span>`;
+const lab=(k,s)=>k+' '+(s=='r'?'expiré':'manquant')+(/^(Prévention|Pièce|Visite|Habilitation|Conduite)/.test(k)?'e':'');
+const issues=p=>Object.entries(p.it).filter(([k,v])=>['r','m'].includes(st(v))).map(([k,v])=>lab(k,st(v)));
+const wait=p=>Object.entries(p.it).filter(([k,v])=>st(v)=='p').map(x=>x[0]);
+const conf=p=>issues(p).length==0;
+const lvl=v=>v<=7?'r':v<=15?'o':v<=30?'y':'g';
+const lv=(k,v)=>{const s=st(v);return s=='r'?'r':s=='m'?'o':s=='p'?'g':lvl(v)};
+const ACT={r:'Renouveler et transmettre le justificatif',m:'Transmettre le document',o:'Prévoir le renouvellement',p:'Valider le document',v:'Aucune'};
+const LV={r:'🔴 Critique',o:'🟠 Urgent',y:'🟡 À surveiller',g:'🟢 Rappel'};
+const tier=v=>v<0?'échéance dépassée':'J-'+(v<=7?7:v<=15?15:v<=30?30:v<=60?60:90);
+const VA={'À PROGRAMMER':['o','Visite à organiser',['ag']],'DEMANDE CRÉÉE':['y','Demande de visite à traiter',['st']],'EN ATTENTE DE CRÉNEAU':['y','Demande de visite à traiter',['st']],'CRÉNEAU PROPOSÉ':['y','Créneau à confirmer',['it']],'EN ATTENTE DE CONFIRMATION':['o','Rendez-vous non confirmé',['ag','st','it']],'ANNULÉ':['y','Rendez-vous annulé',['ag','st','it']],'À REPROGRAMMER':['o','Visite à reprogrammer',['ag','st','it']],'ABSENT':['o','Absence au rendez-vous',['ag','st']],'REPORTÉ':['y','Rendez-vous reporté : nouveau créneau à proposer',['ag','st']]};
+const alerts=(ps,aud='ag')=>{const a=[];const add=(l,t,n,au)=>{if(au.includes(aud))a.push({l,t,n,w:{r:0,o:1,y:2,g:3}[l]})};
+ ps.forEach(p=>{Object.entries(p.it).forEach(([k,v])=>{const s=st(v),au=k=='Visite médicale'?['ag','it','st']:['ag','it','en'];
+  if(s=='r')add('r',lab(k,'r')+' · échéance dépassée',p.n,au);else if(s=='m')add('o',lab(k,'m')+' · document manquant',p.n,au);else if(s=='p')add('g',k+' à valider',p.n,['ag']);
+  else if(typeof v=='number'&&v<=90)add(lvl(v),`${k} : échéance dans ${v} jours (${tier(v)})`,p.n,au)});
+ const V=VA[p.vs];if(V)add(V[0],V[1],p.n,V[2])});
+ return a.sort((x,y)=>x.w-y.w)};
+const alHtml=a=>a.length?a.map(x=>`<div class="al ${x.l}"><b>${LV[x.l]}</b> · ${x.n}<br>${x.t}</div>`).join(''):'<p class="mut">Aucune alerte. Tout est en règle.</p>';
+const LOG=[];const logIt=(t,sys)=>LOG.unshift(fmt(0)+' '+new Date().toTimeString().slice(0,5)+' · '+(sys?'Système':ROLES[role])+' · '+t);
+alerts(P).slice(0,8).reverse().forEach(a=>logIt(`Notification envoyée à ${a.n} : ${a.t}`,1));
+const mission=p=>p.mis===null?'':issues(p).length?`<div class="al r"><b>🔴 MISSION BLOQUÉE</b><br>${issues(p).map(x=>x[0].toUpperCase()+x.slice(1)).join('<br>')}</div>`:'<div class="al g"><b>🟢 MISSION AUTORISÉE</b><br>Tous les éléments obligatoires sont valides.</div>';
+const fiche=(p,ent)=>`<div class="card"><div class="row"><b class="big">${p.n}</b><span class="mut">${AG[p.ag]}${p.en!==null?' · '+EN[p.en]:' · Disponible'}</span></div>
+ ${Object.entries(p.it).map(([k,v])=>`<div class="row" style="padding:4px 0"><span>${k}</span><span>${tag(st(v))}<span class="mut"> ${!ent&&typeof v==='number'?'jusqu’au '+fmt(v):''}</span></span></div>`).join('')}
+ <div style="margin:6px 0">${conf(p)?(wait(p).length?'<span class="tag p">🔵 Dossier en cours de validation</span>':'<span class="tag v">🟢 DOSSIER CONFORME</span>'):'<span class="tag r">⚠️ DOSSIER NON CONFORME</span>'}</div>
+ ${ent?'':Object.entries(p.it).filter(([k,v])=>st(v)!='v').map(([k,v])=>`<div class="mut" style="margin-top:4px">• <b>${k}</b> · échéance : ${typeof v==='number'?fmt(v):'aucune'} · ${LV[lv(k,v)]} · Action : ${ACT[st(v)]}</div>`).join('')}
+ ${mission(p)}</div>`;
+const kpi=(b,l,c='')=>`<div class="k ${c}"><b>${b}</b><span>${l}</span></div>`;
+const cnt=(ps,f)=>ps.filter(f).length;
+const stat=(ps,keys,s)=>ps.reduce((n,p)=>n+Object.entries(p.it).filter(([k,v])=>(!keys||keys.some(x=>k.includes(x)))&&st(v)==s).length,0);
+const dash=ps=>{const c=cnt(ps,conf);return `<div class="kpis">${kpi(ps.length,'Intérimaires')}${kpi(cnt(ps,p=>p.mis!==null),'Missions actives')}${kpi(c,'Dossiers conformes','ok')}${kpi(ps.length-c,'Dossiers non conformes','bad')}
+ ${kpi(cnt(ps,p=>['À PROGRAMMER','À REPROGRAMMER'].includes(p.vs)),'Visites à programmer')}${kpi(cnt(ps,p=>ACTIVE.includes(p.vs)),'Visites à venir')}
+ ${kpi(stat(ps,null,'m'),'Documents manquants','bad')}${kpi(stat(ps,null,'r'),'Éléments expirés','bad')}${kpi(stat(ps,['Permis','CACES'],'r'),'Permis expirés','bad')}${kpi(stat(ps,['Habilitation','Travail en hauteur','SST','Conduite','Incendie'],'r'),'Habilitations expirées','bad')}${kpi(stat(ps,['Prévention'],'r')+stat(ps,['Prévention'],'m'),'Préventions à réaliser')}${kpi(alerts(ps).filter(x=>x.l=='r').length,'Alertes critiques','bad')}</div>
+ <div class="card"><b>Conformité des dossiers</b><div class="bar2"><i style="width:${c/ps.length*100}%;background:var(--v)"></i><i style="width:${(ps.length-c)/ps.length*100}%;background:var(--r)"></i></div><span class="mut">${c} conformes sur ${ps.length}</span></div>`};
+
+/* Espaces et onglets */
+const ROLES={ag:'Agence',st:'Service de santé',en:'Entreprise',it:'Intérimaire',ad:'Administrateur'};
+const TABS={ag:['Tableau de bord','Intérimaires','Missions','Visites','Alertes'],st:['Demandes de visite','Alertes'],en:['Mes intérimaires','Alertes'],it:['Mon dossier','Mes rendez-vous'],ad:['Règles et alertes','Offres','Agences']};
+let role='ag',tab=0,who=0;
+function whoOpts(){const o=role=='ag'?AG:role=='en'?EN:role=='it'?NM:role=='st'?['STAV Hainaut']:['Administrateur global'];
+ who=Math.min(who,o.length-1);document.getElementById('who').innerHTML=o.map((x,i)=>`<option value="${i}" ${i==who?'selected':''}>${x}</option>`).join('')}
+function nav(){document.getElementById('roles').innerHTML=Object.entries(ROLES).map(([k,v])=>`<button aria-pressed="${k==role}" data-r="${k}">${v}</button>`).join('');
+ document.getElementById('tabs').innerHTML=TABS[role].map((t,i)=>`<button aria-pressed="${i==tab}" data-t="${i}">${t}</button>`).join('')}
+const conf1='<div class="note">🔒 Confidentialité : cet espace n’affiche aucune donnée médicale, seulement les statuts administratifs communicables (visite réalisée, échéance).</div>';
+const ACTIVE=['DEMANDE CRÉÉE','EN ATTENTE DE CRÉNEAU','CRÉNEAU PROPOSÉ','EN ATTENTE DE CONFIRMATION','CONFIRMÉ','RAPPEL ENVOYÉ','REPORTÉ'];
+const ACTS={req:['DEMANDE CRÉÉE','Demande de visite créée'],take:['EN ATTENTE DE CRÉNEAU','Demande prise en charge'],slot:['CRÉNEAU PROPOSÉ','Créneau proposé'],relance:['EN ATTENTE DE CONFIRMATION','Relance envoyée à l’intérimaire'],ok:['CONFIRMÉ','Rendez-vous confirmé'],rem:['RAPPEL ENVOYÉ','Rappel envoyé'],done:['VISITE RÉALISÉE','Visite réalisée'],cancel:['ANNULÉ','Rendez-vous annulé'],post:['REPORTÉ','Rendez-vous reporté'],abs:['ABSENT','Absence constatée'],resched:['À REPROGRAMMER','Reprogrammation demandée'],other:['EN ATTENTE DE CRÉNEAU','Autre créneau demandé']};
+const agA=(p,B)=>{const s=p.vs;return (s=='À PROGRAMMER'||s=='À REPROGRAMMER'?B('req',p.i,'Demander la visite'):'')+(['ABSENT','ANNULÉ'].includes(s)?B('resched',p.i,'Demander une reprogrammation',1):'')+(s=='CRÉNEAU PROPOSÉ'?B('relance',p.i,'Relancer',1):'')+(ACTIVE.includes(s)?B('cancel',p.i,'Annuler',1):'')};
+const stA=(p,B)=>{const s=p.vs,A=[];
+ if(s=='DEMANDE CRÉÉE')A.push(B('take',p.i,'Prendre en charge'));
+ if(['DEMANDE CRÉÉE','EN ATTENTE DE CRÉNEAU','REPORTÉ'].includes(s))A.push(B('slot',p.i,'Proposer un créneau'));
+ if(['CRÉNEAU PROPOSÉ','EN ATTENTE DE CONFIRMATION'].includes(s))A.push(B('slot',p.i,'Modifier la proposition',1),B('ok',p.i,'Confirmer le rendez-vous',1));
+ if(s=='CRÉNEAU PROPOSÉ')A.push(B('relance',p.i,'Relancer',1));
+ if(s=='CONFIRMÉ')A.push(B('rem',p.i,'Envoyer le rappel'));
+ if(['CONFIRMÉ','RAPPEL ENVOYÉ'].includes(s))A.push(B('done',p.i,'Visite réalisée'),B('abs',p.i,'Absent',1),B('post',p.i,'Reporter',1));
+ if(['ABSENT','REPORTÉ'].includes(s))A.push(B('resched',p.i,'Demander une reprogrammation',1));
+ return A.join('')};
+function view(){
+ const t=TABS[role][tab];let h='';
+ const B=(c,i,l,alt)=>`<button class="btn${alt?' alt':''}" data-a="${c}" data-i="${i}">${l}</button> `;
+ const vsT=p=>p.vs=='À JOUR'?'À jour':p.vs;
+ if(role=='ag'){const ps=P.filter(p=>p.ag==who);h=conf1;
+  if(t=='Tableau de bord')h+=dash(ps)+'<h2>Alertes prioritaires</h2>'+alHtml(alerts(ps).slice(0,8));
+  if(t=='Intérimaires')h+=ps.map(p=>fiche(p)+(wait(p).length?`<div style="margin:-4px 0 12px">${B('val',p.i,'Valider les documents reçus')}</div>`:'')).join('');
+  if(t=='Missions')h+=ps.filter(p=>p.mis!==null).map(p=>`<div class="card"><div class="row"><b>Mission ${p.mis+1} · ${EN[p.en]}</b><span>${p.n}</span></div>${mission(p)}</div>`).join('')||'<p class="mut">Aucune mission pour cette agence.</p>';
+  if(t=='Visites')h+=`<div class="sc"><table><tr><th>Intérimaire</th><th>Échéance</th><th>Statut</th><th>Créneau</th><th></th></tr>${ps.map(p=>`<tr><td>${p.n}</td><td>${fmt(p.it['Visite médicale'])}</td><td>${vsT(p)}</td><td>${p.sl||''}</td><td>${agA(p,B)}</td></tr>`).join('')}</table></div>`;
+  if(t=='Visites')h+='<h2>Historique des rendez-vous</h2><div class="card mut">'+(ps.flatMap(p=>p.h.map(x=>x+' — '+p.n)).slice(-10).reverse().join('<br>')||'Aucun historique.')+'</div>';
+  if(t=='Alertes')h+=alHtml(alerts(ps))}
+ if(role=='st'){h='<div class="note">🔒 Vous ne voyez que les informations nécessaires à l’organisation des visites. Le contenu médical reste dans votre espace confidentiel.</div>';
+  if(t=='Alertes')h+=alHtml(alerts(P,'st'));
+  else{const q=P.filter(p=>!['À JOUR','À PROGRAMMER','VISITE RÉALISÉE'].includes(p.vs));
+   h+=q.map(p=>`<div class="card"><div class="row"><b>${p.n}</b><span class="mut">${AG[p.ag]} · échéance ${fmt(p.it['Visite médicale'])}</span></div><p>Statut : <b>${p.vs}</b>${p.sl?' · '+p.sl:''}</p>${stA(p,B)}</div>`).join('')||'<p class="mut">Aucune demande en attente.</p>'}}
+ if(role=='en'){const ps=P.filter(p=>p.en==who);h=conf1;
+  if(t=='Mes intérimaires')h+=ps.map(p=>fiche(p,1)).join('')||'<p class="mut">Aucun intérimaire affecté.</p>';else h+=alHtml(alerts(ps,'en'))}
+ if(role=='it'){const p=P[who];
+  if(t=='Mon dossier')h=`<div class="note big">Bonjour ${p.n.split(' ')[0]}. ${conf(p)?'Votre dossier est en règle.':'Une action est nécessaire : '+issues(p).join(', ')+'.'}</div>`+fiche(p)+(issues(p).length?B('up',p.i,'Envoyer un document'):'')+'<h2>Mes rappels</h2>'+alHtml(alerts([p],'it'));
+  else h=`<div class="card"><b>Ma demande de rendez-vous</b><p>Statut : <b>${vsT(p)}</b>${p.sl?'<br>Créneau : '+p.sl:''}</p>${['CRÉNEAU PROPOSÉ','EN ATTENTE DE CONFIRMATION'].includes(p.vs)?B('ok',p.i,'Confirmer')+B('other',p.i,'Demander un autre créneau',1):''}${p.vs=='CONFIRMÉ'?'<p class="mut">🔔 Un rappel vous sera envoyé la veille.</p>':p.vs=='RAPPEL ENVOYÉ'?'<p class="mut">🔔 Rappel envoyé. Merci de vous présenter à l’heure.</p>':''}</div><h2>Historique</h2><div class="card">${p.h.length?p.h.map(x=>`<div class="mut">• ${x}</div>`).join(''):'<span class="mut">Aucun historique.</span>'}</div>`}
+ if(role=='ad'){
+  if(t=='Règles et alertes')h=`<div class="card"><b>Seuil « expire bientôt »</b><p class="mut">Modifiable pour s’adapter aux règles applicables. Les statuts se recalculent aussitôt.</p><input id="thr" type="number" min="7" max="120" value="${S.soon}" aria-label="Seuil en jours"> jours <button class="btn" data-thr>Enregistrer</button></div>
+  <div class="card"><b>Rappels automatiques</b><p class="mut">90 j : rappel · 60 j : rappel · 30 j : alerte · 15 j : urgent · 7 j : critique · dépassé : expiré</p></div>
+  <h2>Journal des automatisations</h2><div class="card mut">${LOG.slice(0,14).join('<br>')}</div>`;
+  if(t=='Offres')h=`<div class="sc"><table><tr><th></th><th>Starter</th><th>Pro</th><th>Entreprise</th><th>Groupe</th></tr><tr><td>Intérimaires</td><td>50</td><td>250</td><td>1 000</td><td>Illimité</td></tr><tr><td>Utilisateurs</td><td>3</td><td>10</td><td>50</td><td>Illimité</td></tr><tr><td>Automatisations</td><td>Rappels</td><td>+ SMS</td><td>+ API</td><td>Sur mesure</td></tr></table></div><p class="mut">Paiement en ligne et facturation : prochainement.</p>`;
+  if(t=='Agences')h=AG.map((a,i)=>`<div class="card"><b>${a}</b><br><span class="mut">${cnt(P,p=>p.ag==i)} intérimaires · ${cnt(P,p=>p.ag==i&&!conf(p))} dossiers non conformes. Données isolées des autres agences.</span></div>`).join('')}
+ document.getElementById('main').innerHTML=h}
+function go(){whoOpts();nav();view()}
+const PERM={ag:['req','cancel','resched','relance','val'],st:['take','slot','relance','rem','done','abs','post','resched','ok'],it:['ok','other','up'],en:[],ad:['thr']};
+const FROM={req:['À PROGRAMMER','À REPROGRAMMER'],take:['DEMANDE CRÉÉE'],slot:['DEMANDE CRÉÉE','EN ATTENTE DE CRÉNEAU','REPORTÉ','CRÉNEAU PROPOSÉ','EN ATTENTE DE CONFIRMATION'],relance:['CRÉNEAU PROPOSÉ'],ok:['CRÉNEAU PROPOSÉ','EN ATTENTE DE CONFIRMATION'],other:['CRÉNEAU PROPOSÉ','EN ATTENTE DE CONFIRMATION'],rem:['CONFIRMÉ'],done:['CONFIRMÉ','RAPPEL ENVOYÉ'],abs:['CONFIRMÉ','RAPPEL ENVOYÉ'],post:['CONFIRMÉ','RAPPEL ENVOYÉ'],cancel:ACTIVE,resched:['ABSENT','ANNULÉ','REPORTÉ']};
+const own=p=>role=='st'||(role=='ag'&&p.ag==who)||(role=='it'&&p.i==who);
+const deny=m=>{logIt('Action refusée : '+m)};
+const act=(a,i)=>{const p=P[+i];
+ if(!p||!(PERM[role]||[]).includes(a)||!own(p))return deny(ROLES[role]+' ne peut pas effectuer « '+a+' »');
+ if(a in FROM&&!FROM[a].includes(p.vs))return deny('statut '+p.vs+' incompatible avec « '+a+' »');
+ if(a=='up'){Object.keys(p.it).forEach(k=>{if(['r','m'].includes(st(p.it[k])))p.it[k]='p'});p.h.push(fmt(0)+' · Document transmis à l’agence');return logIt('Document transmis par '+p.n)}
+ if(a=='val'){Object.keys(p.it).forEach(k=>{if(p.it[k]==='p')p.it[k]=365});return logIt('Documents validés pour '+p.n)}
+ const [ns,m]=ACTS[a],old=p.vs;
+ if(a=='slot')p.sl=fmt(7+(p.k=(p.k||0)+1))+' à 10h00';
+ p.vs=ns;let x=`${fmt(0)} ${new Date().toTimeString().slice(0,5)} · ${ROLES[role]} : ${old} → ${ns}${p.sl?' ('+p.sl+')':''}`;
+ if(a=='done'){p.it['Visite médicale']=365;x+=', prochaine échéance '+fmt(365);logIt('Dossier de '+p.n+' mis à jour automatiquement')}
+ if(a=='rem')logIt('Rappel envoyé à '+p.n+' pour le '+p.sl);
+ if(['cancel','post','abs','resched','done'].includes(a))p.sl='';
+ p.h.push(x);logIt(m+' : '+p.n)};
+document.addEventListener('click',e=>{const d=e.target.dataset;if(!d)return;
+ if(d.r){role=d.r;tab=0;who=0;return go()}
+ if(d.t){tab=+d.t;return go()}
+ if('thr' in d){if(!PERM[role].includes('thr'))return deny('réglage réservé à l’administrateur');S.soon=Math.max(7,+document.getElementById('thr').value||30);logIt('Seuil d’alerte modifié : '+S.soon+' jours');return go()}
+ if(d.a){act(d.a,d.i);go()}});
+document.getElementById('who').onchange=e=>{who=+e.target.value;view()};
+go();
+</script>
+</body>
+</html>
